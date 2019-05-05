@@ -2,8 +2,9 @@ var bbt = require('beebotte');
 var express = require('express');
 var app = express();
 var path = require("path");
-const io = require('socket.io')();
 var http = require('http');
+const server = require('http').Server(app)
+const io = require('socket.io')(server);
 var bodyParser = require('body-parser')
 var data;
 // var http = require('http').createServer(app);
@@ -32,20 +33,7 @@ var transport = {
 //       })
 // })
 
-var client = new bbt.Connector({apiKey: 'gsMtD4jA0aKVC8pnBbpouiBb', secretKey: 'GM0aSlrFlw1fP3FY65qziQeQ5pTPTn2T'});
 
-client.read({
-    channel: '5008MQ7',
-    resource: 'co'
-    // limit: 100/* Retrieves last 5 records */
-  }, function(err, res) {
-    if (err) {
-        throw (err)
-    } else {
-        data = res;
-        console.log("HALA KA",data)
-    }
-});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}))
@@ -53,19 +41,45 @@ app.use(bodyParser.urlencoded({extended: false}))
 
 
 app.get('/', function(req, res) {
-    res.render(__dirname + '/view/main',{name:data});
+    res.sendFile(__dirname + '/view/index.html');
 });
+
 
 app.set('view engine','ejs');
 app.set("views", path.join(__dirname, "views"));
 
-app.listen(port, function() {
+server.listen(port, function() {
     console.log('Server start at port',port);
 });
 
+io.on('connection', socket => {
+    console.log("User connected")
+    const getCurrentData = _ => new Promise( (resolve, reject) => {
+            
+        var client = new bbt.Connector({apiKey: 'gsMtD4jA0aKVC8pnBbpouiBb', secretKey: 'GM0aSlrFlw1fP3FY65qziQeQ5pTPTn2T'});
+            client.read({
+                channel: '5008MQ7',
+                resource: 'co',
+                limit: 1/* Retrieves last 5 records */
+            }, function(err, res) {
+                if (err) {
+                    throw (err)
+                } else {
+                    resolve(res.data)
+                }
+            });
+    })
 
-
-
+    socket.on("start", async () => {
+        let promised = []
+        promised.push(getCurrentData())
+        Promise.all(promised)
+                .then((value) =>{
+                    console.log(value)
+                    console.log("Here")
+                })
+    })
+})
 
 
 

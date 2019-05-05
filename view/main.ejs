@@ -6,17 +6,21 @@
     <title>Page Title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src='//beebotte.com/bbt.js' ></script>
-    <%# <script src='js/jquery.min.js'></script>
-    <script src="/socket.io/socket.io.js"></script> %>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" charset="utf-8"></script>
 </head>
 <body>
+	
+	<button type="submit" onclick="start()">Start</button>
     <canvas id='bbtChart' width="50" height="50"></canvas> 
 	<%# <h1 id = 'name'></h1> %>
 </body>
 </html>
 <script>
+const socket = io.connect('http://localhost:3000');
+
 var school1 = document.getElementById('bbtChart').getContext('2d');
+	
 		var sampleChart = new Chart(school1, {
 			type: 'line',
 			data: {
@@ -33,9 +37,6 @@ var school1 = document.getElementById('bbtChart').getContext('2d');
 				datasets: [{
 					label: 'Number',
 					data:[
-						<% name.forEach(function(msg) { %>
-                            '<%= msg.data %>',
-                        <% }); %>
 						0
 					],
 					backgroundColor: [
@@ -62,4 +63,27 @@ var school1 = document.getElementById('bbtChart').getContext('2d');
 				}
 			}
 		});
+
+		const addData = (sampleChart,label,data) =>{
+			chart.data.labels.push(label);
+		    chart.data.datasets.forEach((dataset) => {
+		        dataset.data.push(data);
+		    });
+		    chart.update();
+		}
+
+		socket.on('newdata', data => {
+			addData(sampleChart,new Date().getTime(),data.value)
+		})
+
+		// const start = () =>{
+		// 	let bool = true
+	 //        while(bool){
+	 //          await setTimeout(() => {
+	 //                data = getCurrentData()
+	 //                socket.emit('newdata', {'value' : this.data})
+	 //            },2000)
+	 //          socket.on("stop", _ => bool = false)
+	 //        }
+		// }
 </script>
